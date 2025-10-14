@@ -1815,10 +1815,21 @@ int32_t stTriggerTaskDeploy(SStreamTriggerTask *pTask, SStreamTriggerDeployMsg *
       code = nodesStringToNode(pEvent->endCond, &pTask->pEndCond);
       QUERY_CHECK_CODE(code, lino, _end);
       pTask->eventTrueFor = pEvent->trueForDuration;
-      code = nodesCollectColumnsFromNode(pTask->pStartCond, NULL, COLLECT_COL_TYPE_ALL, &pTask->pStartCondCols);
-      QUERY_CHECK_CODE(code, lino, _end);
-      code = nodesCollectColumnsFromNode(pTask->pEndCond, NULL, COLLECT_COL_TYPE_ALL, &pTask->pEndCondCols);
-      QUERY_CHECK_CODE(code, lino, _end);
+      if (nodeType(pEvent->startCond) == QUERY_NODE_NODE_LIST) {
+        code = nodesCollectColumnsFromNode(pTask->pStartCond, NULL, COLLECT_COL_TYPE_ALL, &pTask->pStartCondCols);
+        QUERY_CHECK_CODE(code, lino, _end);
+        code = nodesCollectColumnsFromNode(pTask->pStartCond, NULL, COLLECT_COL_TYPE_ALL, &pTask->pEndCondCols);
+        QUERY_CHECK_CODE(code, lino, _end);
+        if (pTask->pEndCond != NULL) {
+          code = nodesCollectColumnsFromNode(pTask->pEndCond, NULL, COLLECT_COL_TYPE_ALL, &pTask->pEndCondCols);
+          QUERY_CHECK_CODE(code, lino, _end);
+        }
+      } else {
+        code = nodesCollectColumnsFromNode(pTask->pStartCond, NULL, COLLECT_COL_TYPE_ALL, &pTask->pStartCondCols);
+        QUERY_CHECK_CODE(code, lino, _end);
+        code = nodesCollectColumnsFromNode(pTask->pEndCond, NULL, COLLECT_COL_TYPE_ALL, &pTask->pEndCondCols);
+        QUERY_CHECK_CODE(code, lino, _end);
+      }
       break;
     }
     case WINDOW_TYPE_COUNT: {
@@ -7716,7 +7727,7 @@ static int32_t stRealtimeGroupDoEventCheck(SSTriggerRealtimeGroup *pGroup) {
         pWin = taosArrayPush(pContext->pWindows, &newWin);
         QUERY_CHECK_NULL(pWin, code, lino, _end, terrno);
         if (pTask->notifyEventType & STRIGGER_EVENT_WINDOW_OPEN) {
-          code = streamBuildEventNotifyContent(pDataBlock, pTask->pStartCondCols, i, &pWin->pWinOpenNotify);
+          code = streamBuildEventNotifyContent(pDataBlock, pTask->pStartCondCols, i, 0, -1, &pWin->pWinOpenNotify);
           QUERY_CHECK_CODE(code, lino, _end);
         }
       }
@@ -7725,7 +7736,7 @@ static int32_t stRealtimeGroupDoEventCheck(SSTriggerRealtimeGroup *pGroup) {
         if (pe[i]) {
           pWin->range.ekey = pTsData[i];
           if (pTask->notifyEventType & STRIGGER_EVENT_WINDOW_CLOSE) {
-            code = streamBuildEventNotifyContent(pDataBlock, pTask->pEndCondCols, i, &pWin->pWinCloseNotify);
+            code = streamBuildEventNotifyContent(pDataBlock, pTask->pEndCondCols, i, 0, -1, &pWin->pWinCloseNotify);
             QUERY_CHECK_CODE(code, lino, _end);
           }
           pWin = NULL;
@@ -9588,7 +9599,7 @@ static int32_t stHistoryGroupDoEventCheck(SSTriggerHistoryGroup *pGroup) {
         }
         if (ps[r]) {
           if (pTask->notifyHistory && (pTask->notifyEventType & STRIGGER_EVENT_WINDOW_OPEN)) {
-            code = streamBuildEventNotifyContent(pDataBlock, pTask->pStartCondCols, r, &pExtraNotifyContent);
+            code = streamBuildEventNotifyContent(pDataBlock, pTask->pStartCondCols, r, 0, -1, &pExtraNotifyContent);
             QUERY_CHECK_CODE(code, lino, _end);
           }
           code = stHistoryGroupOpenWindow(pGroup, pTsData[r], &pExtraNotifyContent, false, true);
@@ -9608,7 +9619,7 @@ static int32_t stHistoryGroupDoEventCheck(SSTriggerHistoryGroup *pGroup) {
         }
         if (pe[r]) {
           if (pTask->notifyHistory && (pTask->notifyEventType & STRIGGER_EVENT_WINDOW_CLOSE)) {
-            code = streamBuildEventNotifyContent(pDataBlock, pTask->pEndCondCols, r, &pExtraNotifyContent);
+            code = streamBuildEventNotifyContent(pDataBlock, pTask->pEndCondCols, r, 0, -1, &pExtraNotifyContent);
             QUERY_CHECK_CODE(code, lino, _end);
           }
           code = stHistoryGroupCloseWindow(pGroup, &pExtraNotifyContent, false);
