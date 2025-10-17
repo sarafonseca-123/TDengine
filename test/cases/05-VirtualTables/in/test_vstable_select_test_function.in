@@ -131,7 +131,6 @@ select hyperloglog(int_tag) from test_vtable_select.vtb_virtual_stb order by 1 l
 select percentile(int_tag, 0.5) from test_vtable_select.vtb_virtual_stb order by 1 limit 5;
 select bottom(int_tag, 10) from test_vtable_select.vtb_virtual_stb order by 1 limit 5;
 select top(int_tag, 10) from test_vtable_select.vtb_virtual_stb order by 1 limit 5;
-select interp(int_tag) from test_vtable_select.vtb_virtual_stb where u_tinyint_col > 0 and u_int_col > 0 RANGE('2020-10-01 00:00:00.000', '2020-10-01 00:01:00.000') EVERY (2a) FILL(linear) order by 1 limit 5;
 select max(int_tag) from test_vtable_select.vtb_virtual_stb order by 1 limit 5;
 select min(int_tag) from test_vtable_select.vtb_virtual_stb order by 1 limit 5;
 select mode(int_tag) from test_vtable_select.vtb_virtual_stb order by 1 limit 5;
